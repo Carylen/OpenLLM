@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 
 import { API_BASE_URL } from '@/lib/config';
 
-export function NavBar({ email, isAdmin }: { email: string; isAdmin?: boolean }) {
+export function NavBar({ email }: { email: string }) {
   const router = useRouter();
 
   async function logout() {
@@ -18,7 +18,6 @@ export function NavBar({ email, isAdmin }: { email: string; isAdmin?: boolean })
       <div className="flex gap-4 text-sm">
         <Link href="/chat" className="font-medium text-slate-800">Chat</Link>
         <Link href="/usage" className="font-medium text-slate-600 hover:text-slate-800">Usage</Link>
-        {isAdmin ? <Link href="/admin" className="font-medium text-slate-600 hover:text-slate-800">Admin</Link> : null}
       </div>
       <div className="flex items-center gap-3 text-sm text-slate-600">
         <span>{email}</span>

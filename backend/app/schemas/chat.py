@@ -11,20 +11,6 @@ class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=20000)
 
 
-class SessionCreateRequest(BaseModel):
-    title: str = Field(default='New Chat', min_length=1, max_length=255)
-
-
-class ChatSessionPublic(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: UUID
-    user_id: UUID
-    title: str
-    created_at: datetime
-    updated_at: datetime
-
-
 class ChatMessagePublic(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -37,11 +23,6 @@ class ChatMessagePublic(BaseModel):
     output_tokens: int
     cost_usd: Decimal
     created_at: datetime
-
-
-class ChatSessionDetail(BaseModel):
-    session: ChatSessionPublic
-    messages: list[ChatMessagePublic]
 
 
 class ChatResponse(BaseModel):

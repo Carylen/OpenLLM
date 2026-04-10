@@ -46,7 +46,7 @@ export default function UsagePage() {
 
   return (
     <main className="min-h-screen bg-slate-50">
-      <NavBar email={me.email} isAdmin={me.is_admin} />
+      <NavBar email={me.email} />
       <div className="mx-auto mt-6 max-w-3xl rounded-xl border bg-white p-6">
         <h1 className="text-xl font-semibold">Usage dashboard</h1>
         {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}

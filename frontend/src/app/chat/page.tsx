@@ -175,7 +175,7 @@ export default function ChatPage() {
 
   return (
     <main className="h-screen bg-slate-50">
-      <NavBar email={me.email} isAdmin={me.is_admin} />
+      <NavBar email={me.email} />
       <div className="grid h-[calc(100vh-57px)] grid-cols-[280px_1fr]">
         <aside className="border-r bg-white p-4">
           <button onClick={createSession} className="mb-3 w-full rounded bg-slate-900 px-3 py-2 text-sm text-white">

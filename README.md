@@ -1,86 +1,71 @@
-# OpenLLM MVP (Phases 1-4)
+# OpenLLM MVP Backend (Phase 1 + Phase 2)
 
-Self-hosted invite-only coding assistant MVP with FastAPI + Next.js.
+Self-hosted FastAPI backend for a private invite-only coding assistant service.
 
-## Features
+## Implemented
 
-- Google OAuth login with HttpOnly JWT cookies
-- Invite-only onboarding and plan assignment
-- Chat sessions and persisted message history
-- Streaming chat responses (SSE) via OpenRouter
-- Monthly usage tracking + quota enforcement
-- Admin panel for users and invite code management
+- Google OAuth login (Authlib)
+- Invite-only onboarding activation
+- JWT auth in HttpOnly cookies
+- PostgreSQL models with Alembic migrations
+- Redis-backed rate limiting
+- Usage tracking by month
+- Chat sessions + messages persistence
+- OpenRouter integration (sync + streaming)
+- Quota enforcement (requests, input tokens, output tokens, cost)
+- Plan-based model allow-list enforcement
 
-## Stack
+## Core Endpoints
 
-- Backend: FastAPI, SQLAlchemy, Alembic, PostgreSQL, Redis
-- Frontend: Next.js App Router, TypeScript, Tailwind CSS
-- Infra: Docker Compose + Nginx (Caddy example included)
+### Auth
+- `GET /auth/google/login`
+- `GET /auth/google/callback`
+- `POST /auth/onboarding/complete`
+- `POST /auth/logout`
+- `GET /me`
 
-## Routes
+### Chat
+- `POST /chat`
+- `POST /chat/stream` (SSE)
 
-### Frontend
-- `/login`
-- `/onboarding`
-- `/chat`
-- `/usage`
-- `/admin` (admin-only)
+### Usage
+- `GET /usage`
+- `GET /usage/history`
 
-### Backend
-- Auth: `/auth/google/login`, `/auth/google/callback`, `/auth/onboarding/complete`, `/auth/logout`, `/me`
-- Chat/Sessions: `/sessions`, `/sessions/{id}`, `/chat`, `/chat/stream`
-- Usage: `/usage`, `/usage/history`
-- Admin: `/admin/users`, `/admin/plans`, `/admin/users/{id}/plan`, `/admin/users/{id}/disable`, `/admin/users/{id}/enable`, `/admin/invite-codes`, `/admin/invite-codes/{id}/revoke`
-
-## Environment setup
+## Quick Start
 
 ```bash
 cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
+# edit backend/.env with Google OAuth + JWT + OpenRouter values
+
+docker compose up --build
 ```
 
-Required backend values in `backend/.env`:
+API base URL (via nginx): `http://localhost`
+
+Health check:
+
+```bash
+curl http://localhost/health
+```
+
+## Environment Variables
+
+See `backend/.env.example` for all options.
+Important values:
 
 - `JWT_SECRET_KEY`
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
-- `GOOGLE_REDIRECT_URI` (example: `http://localhost/auth/google/callback`)
+- `GOOGLE_REDIRECT_URI`
+- `ADMIN_EMAIL`
 - `OPENROUTER_API_KEY`
-- `ADMIN_EMAIL` (must match Google account email for admin access)
-
-Frontend value in `frontend/.env`:
-
-- `NEXT_PUBLIC_API_BASE_URL=http://localhost`
-
-## Run locally
-
-```bash
-docker compose up --build
-```
-
-Services:
-- Backend via Nginx: `http://localhost`
-- Frontend: `http://localhost:3000`
-
-## Verify startup flow
-
-1. Open `http://localhost:3000/login`.
-2. Sign in with Google.
-3. If new user: go to `/onboarding`, enter invite code.
-4. Open `/chat`, create/send messages and verify streaming output.
-5. Open `/usage` and verify request/token/cost usage changes.
-6. If logged in user email equals `ADMIN_EMAIL`, open `/admin`:
-   - view users
-   - assign plans
-   - enable/disable users
-   - create/revoke invite codes
-
-## Reverse proxy examples
-
-- Nginx config used by compose: `infra/nginx/default.conf`
-- Caddy production-style example: `infra/caddy/Caddyfile.example`
+- `CHAT_RATE_LIMIT_PER_MINUTE_USER`
+- `CHAT_RATE_LIMIT_PER_MINUTE_IP`
 
 ## Notes
 
-- Frontend uses cookie auth with `credentials: include`.
-- Backend remains source of truth for admin checks, model allow-list, and quota enforcement.
+- New users are created inactive and must redeem invite code via `/auth/onboarding/complete`.
+- Chat requests require active users and allowed model by plan.
+- Quota is enforced before requests and usage is incremented after provider response.
+- Streaming endpoint uses Server-Sent Events and persists final assistant output.
