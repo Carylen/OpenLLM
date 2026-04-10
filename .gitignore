@@ -3,10 +3,7 @@ __pycache__/
 *.sqlite3
 .env
 backend/.env
-frontend/.env
 .venv/
 .pytest_cache/
 .mypy_cache/
 alembic.log
-node_modules/
-.next/

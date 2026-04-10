@@ -1,25 +1,23 @@
 import json
+from decimal import Decimal
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import Settings, get_settings
 from app.core.database import get_db
 from app.core.security import require_active_user
-from app.models.chat_message import ChatMessage
-from app.models.chat_session import ChatSession
 from app.models.user import User
-from app.schemas.chat import ChatRequest, ChatResponse, ChatSessionDetail, ChatSessionPublic, SessionCreateRequest
+from app.schemas.chat import ChatRequest, ChatResponse
 from app.services.chat import get_or_create_session, get_session_messages, persist_message
 from app.services.openrouter import chat_completion, stream_chat_completion
 from app.services.pricing import estimate_cost_usd
 from app.services.quota import apply_usage_increment, enforce_quota_before_request, ensure_plan_and_model_allowed, get_or_create_current_usage
 from app.services.rate_limit import enforce_rate_limit
 
-router = APIRouter(tags=['chat'])
+router = APIRouter(prefix='/chat', tags=['chat'])
 
 
 def _enforce_chat_rate_limit(request: Request, user: User, settings: Settings) -> None:
@@ -28,43 +26,7 @@ def _enforce_chat_rate_limit(request: Request, user: User, settings: Settings) -
     enforce_rate_limit(key=f'rl:chat:ip:{ip}', limit=settings.chat_rate_limit_per_minute_ip)
 
 
-@router.post('/sessions', response_model=ChatSessionPublic)
-def create_session(
-    payload: SessionCreateRequest,
-    current_user: User = Depends(require_active_user),
-    db: Session = Depends(get_db),
-):
-    session = ChatSession(user_id=current_user.id, title=payload.title[:255])
-    db.add(session)
-    db.commit()
-    db.refresh(session)
-    return session
-
-
-@router.get('/sessions', response_model=list[ChatSessionPublic])
-def list_sessions(current_user: User = Depends(require_active_user), db: Session = Depends(get_db)):
-    return list(
-        db.scalars(
-            select(ChatSession)
-            .where(ChatSession.user_id == current_user.id)
-            .order_by(ChatSession.updated_at.desc())
-            .limit(100)
-        )
-    )
-
-
-@router.get('/sessions/{session_id}', response_model=ChatSessionDetail)
-def get_session(session_id: str, current_user: User = Depends(require_active_user), db: Session = Depends(get_db)):
-    session = db.scalar(select(ChatSession).where(ChatSession.id == session_id, ChatSession.user_id == current_user.id))
-    if not session:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Session not found')
-    messages = list(
-        db.scalars(select(ChatMessage).where(ChatMessage.session_id == session.id).order_by(ChatMessage.created_at.asc()))
-    )
-    return ChatSessionDetail(session=session, messages=messages)
-
-
-@router.post('/chat', response_model=ChatResponse)
+@router.post('', response_model=ChatResponse)
 async def chat_completion_endpoint(
     payload: ChatRequest,
     request: Request,
@@ -125,7 +87,7 @@ async def chat_completion_endpoint(
     return ChatResponse(session_id=session.id, message=assistant)
 
 
-@router.post('/chat/stream')
+@router.post('/stream')
 async def chat_stream_endpoint(
     payload: ChatRequest,
     request: Request,
