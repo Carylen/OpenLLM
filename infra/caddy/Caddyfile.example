@@ -1,0 +1,13 @@
+# Example Caddy reverse proxy for production-style deployment.
+# Replace example.com with your domain.
+
+example.com {
+  encode zstd gzip
+
+  # Frontend app
+  reverse_proxy / http://frontend:3000
+
+  # Backend API routes
+  @api path /auth/* /me /sessions* /chat* /usage* /admin* /health
+  reverse_proxy @api http://backend:8000
+}
