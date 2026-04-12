@@ -4,6 +4,12 @@ from pydantic import AnyHttpUrl, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+class DatabaseSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_file='.env', env_file_encoding='utf-8', case_sensitive=False, extra='ignore')
+
+    database_url: str = 'postgresql+psycopg://postgres:postgres@localhost:5432/openllm'
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file='.env', env_file_encoding='utf-8', case_sensitive=False)
 
@@ -12,8 +18,8 @@ class Settings(BaseSettings):
     debug: bool = True
     backend_cors_origins: list[AnyHttpUrl] = []
 
-    database_url: str = 'postgresql+psycopg://postgres:postgres@db:5432/openllm'
-    redis_url: str = 'redis://redis:6379/0'
+    database_url: str = 'postgresql+psycopg://postgres:postgres@localhost:5432/openllm'
+    redis_url: str = 'redis://localhost:6379/0'
 
     jwt_secret_key: str
     jwt_algorithm: str = 'HS256'
@@ -57,3 +63,8 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+@lru_cache
+def get_database_url() -> str:
+    return DatabaseSettings().database_url
